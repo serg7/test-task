@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
+import { useDebounce } from '@/hooks/useDebounce';
 import { Input } from '@/components/ui/input';
 import { Search } from 'lucide-react';
 
@@ -10,14 +11,11 @@ interface SearchBarProps {
 
 export function SearchBar({ onSearch }: SearchBarProps) {
   const [searchTerm, setSearchTerm] = useState('');
+  const debouncedSearchTerm = useDebounce(searchTerm, 300);
 
   useEffect(() => {
-    const timer = setTimeout(() => {
-      onSearch(searchTerm);
-    }, 300);
-
-    return () => clearTimeout(timer);
-  }, [searchTerm, onSearch]);
+    onSearch(debouncedSearchTerm);
+  }, [debouncedSearchTerm, onSearch]);
 
   return (
     <div className="relative w-full max-w-md">
