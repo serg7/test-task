@@ -1,3 +1,5 @@
+import { API_BASE_URL, HttpMethod } from './constants';
+
 export interface User {
   id: number;
   name: string;
@@ -7,15 +9,6 @@ export interface User {
   city: string;
   createdAt: string;
 }
-
-enum Method {
-  GET = 'GET',
-  POST = 'POST',
-  PUT = 'PUT',
-  DELETE = 'DELETE',
-}
-
-const API_BASE_URL = 'http://localhost:4000/api';
 
 export async function fetchUsers(searchQuery?: string): Promise<User[]> {
   const url = searchQuery
@@ -33,7 +26,7 @@ export async function fetchUsers(searchQuery?: string): Promise<User[]> {
 
 export async function deleteUser(userId: number): Promise<void> {
   const response = await fetch(`${API_BASE_URL}/users/${userId}`, {
-    method: Method.DELETE,
+    method: HttpMethod.DELETE,
   });
 
   if (!response.ok) {

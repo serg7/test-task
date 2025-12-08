@@ -1,53 +1,23 @@
 'use client';
 
-import { useState, useMemo, useCallback, memo } from 'react';
+import { useState, useMemo, useCallback } from 'react';
 import { User, deleteUser } from '@/lib/api';
+import { QUERY_KEYS } from '@/lib/constants';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import {
   Table,
   TableBody,
-  TableCell,
   TableHead,
   TableHeader,
   TableRow,
-} from '@/components/ui/table';
-import { Button } from '@/components/ui/button';
-import { DeleteUserDialog } from './DeleteUserDialog';
-import { Trash2 } from 'lucide-react';
+} from '@/lib/ui/table';
+import { DeleteUserDialog } from '../DeleteUserDialog';
+import { UserTableRow } from './UserTableRow';
 
 interface UserTableProps {
   users: User[];
   isLoading?: boolean;
 }
-
-interface UserTableRowProps {
-  user: User;
-  onDeleteClick: (user: User) => void;
-}
-
-const UserTableRow = memo(({ user, onDeleteClick }: UserTableRowProps) => {
-  return (
-    <TableRow
-      className="hover:bg-neutral-50 transition-colors"
-    >
-      <TableCell className="font-medium text-neutral-900">{user.name}</TableCell>
-      <TableCell className="text-neutral-600">{user.email}</TableCell>
-      <TableCell className="text-neutral-600">{user.company}</TableCell>
-      <TableCell className="text-neutral-600">{user.address}</TableCell>
-      <TableCell className="text-neutral-600">{user.city}</TableCell>
-      <TableCell className="text-right">
-        <Button
-          variant="ghost"
-          size="sm"
-          onClick={() => onDeleteClick(user)}
-          className="hover:bg-red-50 hover:text-red-600 transition-colors"
-        >
-          <Trash2 className="h-4 w-4" />
-        </Button>
-      </TableCell>
-    </TableRow>
-  );
-});
 
 export function UserTable({ users, isLoading }: UserTableProps) {
   const [userToDelete, setUserToDelete] = useState<User | null>(null);
@@ -56,7 +26,7 @@ export function UserTable({ users, isLoading }: UserTableProps) {
   const deleteMutation = useMutation({
     mutationFn: deleteUser,
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['users'] });
+      queryClient.invalidateQueries({ queryKey: [QUERY_KEYS.USERS] });
       setUserToDelete(null);
     },
   });

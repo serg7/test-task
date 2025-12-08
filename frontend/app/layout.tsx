@@ -4,7 +4,7 @@ import { Providers } from "./providers";
 
 export const metadata: Metadata = {
   title: "User Management Dashboard",
-  description: "Manage users with ease - search, view, and delete users",
+  description: "Manage users",
 };
 
 export default function RootLayout({

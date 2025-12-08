@@ -8,8 +8,8 @@ import {
   DialogFooter,
   DialogHeader,
   DialogTitle,
-} from '@/components/ui/dialog';
-import { Button } from '@/components/ui/button';
+} from '@/lib/ui/dialog';
+import { Button } from '@/lib/ui/button';
 import { AlertCircle } from 'lucide-react';
 
 interface DeleteUserDialogProps {
