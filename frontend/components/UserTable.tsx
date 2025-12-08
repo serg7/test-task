@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useMemo, useCallback, memo } from 'react';
 import { User, deleteUser } from '@/lib/api';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import {
@@ -20,6 +20,35 @@ interface UserTableProps {
   isLoading?: boolean;
 }
 
+interface UserTableRowProps {
+  user: User;
+  onDeleteClick: (user: User) => void;
+}
+
+const UserTableRow = memo(({ user, onDeleteClick }: UserTableRowProps) => {
+  return (
+    <TableRow
+      className="hover:bg-neutral-50 transition-colors"
+    >
+      <TableCell className="font-medium text-neutral-900">{user.name}</TableCell>
+      <TableCell className="text-neutral-600">{user.email}</TableCell>
+      <TableCell className="text-neutral-600">{user.company}</TableCell>
+      <TableCell className="text-neutral-600">{user.address}</TableCell>
+      <TableCell className="text-neutral-600">{user.city}</TableCell>
+      <TableCell className="text-right">
+        <Button
+          variant="ghost"
+          size="sm"
+          onClick={() => onDeleteClick(user)}
+          className="hover:bg-red-50 hover:text-red-600 transition-colors"
+        >
+          <Trash2 className="h-4 w-4" />
+        </Button>
+      </TableCell>
+    </TableRow>
+  );
+});
+
 export function UserTable({ users, isLoading }: UserTableProps) {
   const [userToDelete, setUserToDelete] = useState<User | null>(null);
   const queryClient = useQueryClient();
@@ -32,15 +61,25 @@ export function UserTable({ users, isLoading }: UserTableProps) {
     },
   });
 
-  const handleDeleteClick = (user: User) => {
+  const handleDeleteClick = useCallback((user: User) => {
     setUserToDelete(user);
-  };
+  }, []);
 
   const handleConfirmDelete = () => {
     if (userToDelete) {
       deleteMutation.mutate(userToDelete.id);
     }
   };
+
+  const rows = useMemo(() => {
+    return users.map((user) => (
+      <UserTableRow
+        key={user.id}
+        user={user}
+        onDeleteClick={handleDeleteClick}
+      />
+    ));
+  }, [users, handleDeleteClick]);
 
   if (isLoading) {
     return (
@@ -75,28 +114,7 @@ export function UserTable({ users, isLoading }: UserTableProps) {
             </TableRow>
           </TableHeader>
           <TableBody>
-            {users.map((user) => (
-              <TableRow
-                key={user.id}
-                className="hover:bg-neutral-50 transition-colors"
-              >
-                <TableCell className="font-medium text-neutral-900">{user.name}</TableCell>
-                <TableCell className="text-neutral-600">{user.email}</TableCell>
-                <TableCell className="text-neutral-600">{user.company}</TableCell>
-                <TableCell className="text-neutral-600">{user.address}</TableCell>
-                <TableCell className="text-neutral-600">{user.city}</TableCell>
-                <TableCell className="text-right">
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    onClick={() => handleDeleteClick(user)}
-                    className="hover:bg-red-50 hover:text-red-600 transition-colors"
-                  >
-                    <Trash2 className="h-4 w-4" />
-                  </Button>
-                </TableCell>
-              </TableRow>
-            ))}
+            {rows}
           </TableBody>
         </Table>
       </div>
