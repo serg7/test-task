@@ -1,7 +1,7 @@
 'use client';
 
-import { useState, useMemo, useCallback } from 'react';
-import { User, deleteUser } from '@/lib/api';
+import { useState, useCallback } from 'react';
+import { User, deleteUser, ApiError } from '@/lib/api';
 import { QUERY_KEYS } from '@/lib/constants';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import {
@@ -13,6 +13,7 @@ import {
 } from '@/lib/ui/table';
 import { DeleteUserDialog } from '../DeleteUserDialog';
 import { UserTableRow } from './UserTableRow';
+import { toast } from 'sonner';
 
 interface UserTableProps {
   users: User[];
@@ -25,9 +26,23 @@ export function UserTable({ users, isLoading }: UserTableProps) {
 
   const deleteMutation = useMutation({
     mutationFn: deleteUser,
-    onSuccess: () => {
+    onSuccess: (_, userId) => {
       queryClient.invalidateQueries({ queryKey: [QUERY_KEYS.USERS] });
       setUserToDelete(null);
+      toast.success('User deleted successfully', {
+        description: 'The user has been removed from the database',
+      });
+    },
+    onError: (error: Error) => {
+      if (error instanceof ApiError) {
+        toast.error('Failed to delete user', {
+          description: error.message,
+        });
+      } else {
+        toast.error('Network error', {
+          description: 'Unable to connect to the server',
+        });
+      }
     },
   });
 
@@ -40,16 +55,6 @@ export function UserTable({ users, isLoading }: UserTableProps) {
       deleteMutation.mutate(userToDelete.id);
     }
   };
-
-  const rows = useMemo(() => {
-    return users.map((user) => (
-      <UserTableRow
-        key={user.id}
-        user={user}
-        onDeleteClick={handleDeleteClick}
-      />
-    ));
-  }, [users, handleDeleteClick]);
 
   if (isLoading) {
     return (
@@ -84,7 +89,13 @@ export function UserTable({ users, isLoading }: UserTableProps) {
             </TableRow>
           </TableHeader>
           <TableBody>
-            {rows}
+            {users.map((user) => (
+              <UserTableRow
+                key={user.id}
+                user={user}
+                onDeleteClick={handleDeleteClick}
+              />
+            ))}
           </TableBody>
         </Table>
       </div>
@@ -95,6 +106,7 @@ export function UserTable({ users, isLoading }: UserTableProps) {
         onClose={() => setUserToDelete(null)}
         onConfirm={handleConfirmDelete}
         isDeleting={deleteMutation.isPending}
+        error={deleteMutation.error instanceof ApiError ? deleteMutation.error.message : undefined}
       />
     </>
   );

@@ -18,6 +18,7 @@ interface DeleteUserDialogProps {
   onClose: () => void;
   onConfirm: () => void;
   isDeleting?: boolean;
+  error?: string;
 }
 
 export function DeleteUserDialog({
@@ -26,6 +27,7 @@ export function DeleteUserDialog({
   onClose,
   onConfirm,
   isDeleting,
+  error,
 }: DeleteUserDialogProps) {
   if (!user) return null;
 
@@ -47,6 +49,19 @@ export function DeleteUserDialog({
             </div>
           </div>
         </DialogHeader>
+
+        {error && (
+          <div className="rounded-md bg-red-50 border border-red-200 p-3">
+            <div className="flex items-start gap-2">
+              <AlertCircle className="h-4 w-4 text-red-600 mt-0.5" />
+              <div className="text-sm text-red-800">
+                <p className="font-medium">Error deleting user</p>
+                <p className="mt-1">{error}</p>
+              </div>
+            </div>
+          </div>
+        )}
+
         <DialogFooter className="mt-6 gap-2 sm:gap-0">
           <Button
             variant="outline"

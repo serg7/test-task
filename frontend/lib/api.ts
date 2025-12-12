@@ -10,26 +10,65 @@ export interface User {
   createdAt: string;
 }
 
-export async function fetchUsers(searchQuery?: string): Promise<User[]> {
-  const url = searchQuery
-    ? `${API_BASE_URL}/users?q=${encodeURIComponent(searchQuery)}`
-    : `${API_BASE_URL}/users`;
+export class ApiError extends Error {
+  constructor(
+    message: string,
+    public statusCode: number,
+    public details?: any
+  ) {
+    super(message);
+    this.name = 'ApiError';
+  }
+}
 
-  const response = await fetch(url);
-
+async function handleResponse<T>(response: Response): Promise<T> {
   if (!response.ok) {
-    throw new Error('Failed to fetch users');
+    let errorMessage = 'An error occurred';
+    let errorDetails;
+
+    try {
+      const errorData = await response.json();
+      errorMessage = errorData.message || errorData.error || errorMessage;
+      errorDetails = errorData.details;
+    } catch {
+      // If response is not JSON, use status text
+      errorMessage = response.statusText || errorMessage;
+    }
+
+    throw new ApiError(errorMessage, response.status, errorDetails);
   }
 
   return response.json();
 }
 
-export async function deleteUser(userId: number): Promise<void> {
-  const response = await fetch(`${API_BASE_URL}/users/${userId}`, {
-    method: HttpMethod.DELETE,
-  });
+export async function fetchUsers(searchQuery?: string): Promise<User[]> {
+  const url = searchQuery
+    ? `${API_BASE_URL}/users?q=${encodeURIComponent(searchQuery)}`
+    : `${API_BASE_URL}/users`;
 
-  if (!response.ok) {
-    throw new Error('Failed to delete user');
+  try {
+    const response = await fetch(url);
+    return handleResponse<User[]>(response);
+  } catch (error) {
+    if (error instanceof ApiError) {
+      throw error;
+    }
+    // Network error or other fetch failure
+    throw new ApiError('Failed to connect to server. Please check your connection.', 0);
+  }
+}
+
+export async function deleteUser(userId: number): Promise<void> {
+  try {
+    const response = await fetch(`${API_BASE_URL}/users/${userId}`, {
+      method: HttpMethod.DELETE,
+    });
+    await handleResponse<{ message: string; user: User }>(response);
+  } catch (error) {
+    if (error instanceof ApiError) {
+      throw error;
+    }
+    // Network error or other fetch failure
+    throw new ApiError('Failed to connect to server. Please check your connection.', 0);
   }
 }

@@ -1,6 +1,7 @@
-import { Router, Request, Response } from 'express';
+import { Router, Request, Response, NextFunction } from 'express';
 import prisma from '../db';
 import { searchQuerySchema, userIdSchema } from '../validators/user';
+import { ZodError } from 'zod';
 
 const router = Router();
 
@@ -9,7 +10,7 @@ enum Order {
   DESC = 'desc',
 }
 
-router.get('/', async (req: Request, res: Response) => {
+router.get('/', async (req: Request, res: Response, next: NextFunction) => {
   try {
     const { q } = searchQuerySchema.parse(req.query);
 
@@ -32,17 +33,26 @@ router.get('/', async (req: Request, res: Response) => {
 
     res.json(users);
   } catch (error) {
-    console.error('Error fetching users:', error);
-    res.status(500).json({ error: 'Failed to fetch users' });
+    if (error instanceof ZodError) {
+      return res.status(400).json({
+        error: 'Invalid query parameters',
+        message: 'Search query must be a valid string',
+        details: error.errors,
+      });
+    }
+    next(error);
   }
 });
 
-router.get('/search', async (req: Request, res: Response) => {
+router.get('/search', async (req: Request, res: Response, next: NextFunction) => {
   try {
     const { q } = searchQuerySchema.parse(req.query);
 
     if (!q) {
-      return res.status(400).json({ error: 'Search query parameter "q" is required' });
+      return res.status(400).json({
+        error: 'Missing required parameter',
+        message: 'Search query parameter "q" is required'
+      });
     }
 
     const users = await prisma.user.findMany({
@@ -57,12 +67,18 @@ router.get('/search', async (req: Request, res: Response) => {
 
     res.json(users);
   } catch (error) {
-    console.error('Error searching users:', error);
-    res.status(500).json({ error: 'Failed to search users' });
+    if (error instanceof ZodError) {
+      return res.status(400).json({
+        error: 'Invalid query parameters',
+        message: 'Search query must be a valid string',
+        details: error.errors,
+      });
+    }
+    next(error);
   }
 });
 
-router.delete('/:id', async (req: Request, res: Response) => {
+router.delete('/:id', async (req: Request, res: Response, next: NextFunction) => {
   try {
     const { id } = userIdSchema.parse(req.params);
 
@@ -71,22 +87,29 @@ router.delete('/:id', async (req: Request, res: Response) => {
     });
 
     if (!user) {
-      return res.status(404).json({ error: 'User not found' });
+      return res.status(404).json({
+        error: 'User not found',
+        message: `No user found with ID ${id}`,
+      });
     }
 
     await prisma.user.delete({
       where: { id },
     });
 
-    res.json({ message: 'User deleted successfully', user });
+    res.json({
+      message: 'User deleted successfully',
+      user,
+    });
   } catch (error) {
-    console.error('Error deleting user:', error);
-
-    if (error instanceof Error && error.message.includes('ID must be a number')) {
-      return res.status(400).json({ error: 'Invalid user ID format' });
+    if (error instanceof ZodError) {
+      return res.status(400).json({
+        error: 'Invalid user ID',
+        message: 'User ID must be a valid number',
+        details: error.errors,
+      });
     }
-
-    res.status(500).json({ error: 'Failed to delete user' });
+    next(error);
   }
 });
 
