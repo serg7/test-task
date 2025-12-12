@@ -16,5 +16,7 @@ model User {
   city      String
   createdAt DateTime @default(now())
 
+  @@index([name])
+  @@index([email])
   @@map("users")
 }

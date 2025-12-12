@@ -44,40 +44,6 @@ router.get('/', async (req: Request, res: Response, next: NextFunction) => {
   }
 });
 
-router.get('/search', async (req: Request, res: Response, next: NextFunction) => {
-  try {
-    const { q } = searchQuerySchema.parse(req.query);
-
-    if (!q) {
-      return res.status(400).json({
-        error: 'Missing required parameter',
-        message: 'Search query parameter "q" is required'
-      });
-    }
-
-    const users = await prisma.user.findMany({
-      where: {
-        OR: [
-          { name: { contains: q, mode: 'insensitive' } },
-          { email: { contains: q, mode: 'insensitive' } },
-        ],
-      },
-      orderBy: { createdAt: Order.DESC },
-    });
-
-    res.json(users);
-  } catch (error) {
-    if (error instanceof ZodError) {
-      return res.status(400).json({
-        error: 'Invalid query parameters',
-        message: 'Search query must be a valid string',
-        details: error.errors,
-      });
-    }
-    next(error);
-  }
-});
-
 router.delete('/:id', async (req: Request, res: Response, next: NextFunction) => {
   try {
     const { id } = userIdSchema.parse(req.params);
